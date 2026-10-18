@@ -1,0 +1,46 @@
+project_id = "nexo-arena"
+[api]
+enabled = true
+port = 54341
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+[db]
+port = 54342
+shadow_port = 54340
+major_version = 17
+[studio]
+enabled = true
+port = 54343
+[local_smtp]
+enabled = true
+port = 54344
+[storage]
+enabled = false
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:4173"]
+jwt_expiry = 3600
+enable_signup = true
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+max_frequency = "1m"
+otp_length = 6
+otp_expiry = 600
+[auth.mfa.totp]
+# Preserve the hosted default when syncing this configuration.
+enroll_enabled = true
+verify_enabled = true
+[auth.email.template.magic_link]
+subject = "Your NEXO Arena sign-in code"
+content_path = "./supabase/templates/magic_link.html"
+[auth.email.template.confirmation]
+subject = "Your NEXO Arena sign-in code"
+content_path = "./supabase/templates/magic_link.html"
+[edge_runtime]
+enabled = true
+policy = "per_worker"
+[functions.arena]
+verify_jwt = false

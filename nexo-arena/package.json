@@ -1,0 +1,61 @@
+{
+  "name": "nexo-arena",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@nexo/web",
+    "build": "npm run build --workspace=@nexo/web && node scripts/build-sw.mjs",
+    "preview": "node scripts/serve.mjs",
+    "lint": "eslint .",
+    "typecheck": "tsc -p packages/game-engine/tsconfig.json --noEmit && tsc -p packages/shared/tsconfig.json --noEmit && tsc -p packages/online/tsconfig.json --noEmit && tsc -p apps/web/tsconfig.json --noEmit && tsc -p apps/mobile/tsconfig.json --noEmit && tsc -p tsconfig.integration.json --noEmit",
+    "mobile": "npm run start --workspace=@nexo/mobile",
+    "mobile:android": "npm run android --workspace=@nexo/mobile",
+    "mobile:ios": "npm run ios --workspace=@nexo/mobile",
+    "mobile:export": "npm run export --workspace=@nexo/mobile",
+    "mobile:web": "npm run web --workspace=@nexo/mobile",
+    "test:mobile": "npm run test --workspace=@nexo/mobile",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:mobile-ui": "playwright test --config playwright.mobile.config.ts",
+    "test:backend": "vitest run --config vitest.backend.config.ts",
+    "test:postgres": "node scripts/test-postgres.mjs",
+    "test:web": "vitest run --config vitest.web.config.ts",
+    "test:integration": "node scripts/test-integration.mjs",
+    "test:load": "NEXO_LOAD_PROBE=1 node scripts/test-integration.mjs",
+    "release:check": "node scripts/release-check.mjs",
+    "release:web": "node scripts/build-release-web.mjs",
+    "test:release": "node --test scripts/release.test.mjs",
+    "verify:hosted": "node scripts/verify-hosted.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "@playwright/test": "^1.56.0",
+    "@types/pg": "^8.23.1",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^16.0.0",
+    "pg": "^8.23.1",
+    "sharp": "^0.35.5",
+    "typescript": "^5.9.0",
+    "vitest": "^4.0.0",
+    "jsdom": "20.0.3"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "overrides": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-test-renderer": "19.2.3",
+    "react-native-worklets": "0.10.1",
+    "react-native-reanimated": "4.5.1",
+    "xcode": {
+      "uuid": "11.1.1"
+    }
+  }
+}

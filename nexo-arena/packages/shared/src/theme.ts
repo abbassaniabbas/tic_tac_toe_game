@@ -1,0 +1,31 @@
+export const colors = {
+  dark: {
+    background: "#101115",
+    surface: "#191b21",
+    raised: "#20232b",
+    board: "#171a21",
+    border: "#30333e",
+    text: "#f2f3f7",
+    muted: "#a1a5b4",
+    faint: "#767b8d",
+    blue: "#6a8dff",
+    primary: "#547bff",
+    violet: "#b196ff",
+    cyan: "#72d9c2",
+  },
+  light: {
+    background: "#f4f5f8",
+    surface: "#ffffff",
+    raised: "#e8ebf2",
+    board: "#edf0f6",
+    border: "#d6dae5",
+    text: "#191c2b",
+    muted: "#5d6376",
+    faint: "#6b7387",
+    blue: "#365fd3",
+    primary: "#365fd3",
+    violet: "#7850d0",
+    cyan: "#237b66",
+  },
+} as const;
+export type Palette = { [K in keyof typeof colors.dark]: string };

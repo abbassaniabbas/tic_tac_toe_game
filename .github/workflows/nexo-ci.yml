@@ -1,0 +1,92 @@
+name: NEXO release checks
+on:
+  push:
+    paths: ["nexo-arena/**", ".github/workflows/nexo-ci.yml"]
+  pull_request:
+    paths: ["nexo-arena/**", ".github/workflows/nexo-ci.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nexo-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+defaults:
+  run:
+    working-directory: nexo-arena
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: nexo-arena/package-lock.json
+      - run: npm ci
+      - run: npm run lint && npm run typecheck && npm run test:release
+      - run: npm test && npm run test:web && npm run test:mobile && npm run test:backend
+      - run: NEXO_BUILD_CACHE=0 npm run build
+      - run: npm run mobile:export && npm run export:web --workspace=@nexo/mobile
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e -- --workers=1
+      - run: npm run test:mobile-ui -- --workers=1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: nexo-browser-results
+          path: |
+            nexo-arena/playwright-report
+            nexo-arena/test-results
+            nexo-arena/mobile-test-results
+          retention-days: 7
+  services:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: nexo-arena/package-lock.json
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3
+        with:
+          version: 2.111.0
+      - run: npm ci
+      - name: Start the disposable local backend
+        run: supabase start --exclude studio,postgres-meta,storage-api,imgproxy,logflare,vector,supavisor > "$RUNNER_TEMP/nexo-stack.log" 2>&1
+      - name: Serve the actual arena entry point
+        run: |
+          supabase functions serve arena > "$RUNNER_TEMP/nexo-functions.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/nexo-functions.pid"
+          for attempt in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:54341/functions/v1/arena || true)
+            if [ "$code" = '401' ]; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+      - run: npm run test:integration
+      - name: Stop disposable services
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/nexo-functions.pid" ]; then kill "$(cat "$RUNNER_TEMP/nexo-functions.pid")" || true; fi
+          supabase stop --no-backup
+  dependency-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: "24"
+      - run: npm ci --ignore-scripts
+      # Deliberately fails while unresolved high advisories remain; no forced SDK downgrade.
+      - run: npm audit --audit-level=high
